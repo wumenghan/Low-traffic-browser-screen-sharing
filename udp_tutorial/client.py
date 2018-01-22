@@ -14,7 +14,8 @@ def main():
 		print "Failed to create socket"
 		sys.exit()
 
-	host = "localhost"
+	#host = "localhost"
+	host = "hci.ecn.purdue.edu"
 	port = 8888
 
 	while True:
@@ -29,6 +30,7 @@ def main():
 			reply = d[0]
 			addr = d[1]
 			print "Server reply : " + reply
+			print addr
 		except socket.error, msg:
 			print 'Error Code : ' + str(msg[0]) + ' Message ' + msg[1]
 			sys.exit()

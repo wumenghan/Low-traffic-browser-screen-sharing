@@ -10,7 +10,8 @@ __license__ = "MIT"
 
 import socket
 import sys
-HOST = ''
+#HOST = ''
+HOST = 'hci.ecn.purdue.edu'
 PORT = 8888
 
 def main():
