@@ -27,9 +27,9 @@ def main():
 	except socket.error, msg:
 		print 'Bind failed. Error Code : ' + str(msg[0]) + ' Message ' + msg[1]
 		sys.exit()
+
 	print "Socket bind Complete"
 
-	print "Waiting on port: ", PORT
 	while True:
 		# receive data from client (data, addr)
 		data, addr = s.recvfrom(1024)
