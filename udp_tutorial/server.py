@@ -10,8 +10,8 @@ __license__ = "MIT"
 
 import socket
 import sys
-HOST = ''
-port = 8888
+HOST = 'hci.ecn.purdue.edu'
+PORT = 8888
 
 def main():
 	try:
@@ -29,8 +29,7 @@ def main():
 		sys.exit()
 	print "Socket bind Complete"
 
-	s.bind(("", port))
-	print "Waiting on port: ", port
+	print "Waiting on port: ", PORT
 	while True:
 		# receive data from client (data, addr)
 		data, addr = s.recvfrom(1024)
