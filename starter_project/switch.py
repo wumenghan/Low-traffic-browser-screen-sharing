@@ -1,55 +1,83 @@
-#!/usr/bin/evn python
-# -*- coding: utf-8 -*-
-"""
-	switch process:
-		1. Each switch process is provide with its own id, as well as 
-		hostname, port number that controller process runs on as command line 
-		arguments.
-		2. When switch join system, it contacts the controller with a 
-		REGISTER_REQUEST, along with its id. The controller learns the 
-		host/port information of the switch from this message.
-		3. On receiving a REGISTER_RESPONSE, a swtich immediately sends a 
-		"KEEP-ALIVE" message of each of the active neighbors (using the 
-		host/port information provided in the response.)
-		If other node receive a "KEEP-ALIVE" message from A, it marks A as an
-		active neighbor, and learns the host/posrt infor for Switch A.
-		4. All switches periodicaly send KEEP_ALIVE messages to each other.
-	Each switch takes the following operations:
-	1. Every K seconds, send KEEP_ALIVE message of each of the neighboring switches.
-	2. Every K seconds, send a TOPOLOGY_UPDATE to controller. This message should 
-		inlude a set of live neighbors of thatt swtich.
-"""
-
 import socket 
 import sys
+import json
+import time
+
+# TODO
+# 1. write switch as class
+# 2. send KEEP_ALIVE, TOPOLOGY_UPDATE requst periodically
+# 3. log the request
+CONTROLLER_PORT = 8000
+CONTROLLER_HOST = "localhost"
+SWITCH_HOST = "localhost"
 
 def main():
+	argv = sys.argv
+	
+	if len(argv) < 3:
+		print("Enter: <switchID> <controller hostname> <controller port>")
+		return 
+	else:
+		if argv[3] == "-f":
+			swtich()
+			switch_id, con_host_name, con_port, _, neighbor_id = argv
+			switch(switch_id, con_host_name, con_port, neighbor_id)
+		else:
+			print argv
+			_, switch_id, con_host_name, con_port = argv
+			switch(int(switch_id), con_host_name, con_port)
+
+# controller has its own hostname and port name.
+# switch also has its own hostname and port name. 
+
+def switch(switch_id, con_host_name, con_port, neighbor_id=None):
+	# If we have neighbor_id, we are simulating link failure.
+	
 	try:
 		s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 	except socket.error:
-		print "Failed to create socket"
+		print("Failed to create socket")
 		sys.exit()
+	
+	SWITCH_PORT = 8000 + switch_id	
 
-	host = "localhost"
-	port = 8888
+	# Bind to self host and port to wait for information from others.
+	# Either other switch or controller.
+	try:
+		s.bind((SWITCH_HOST, SWITCH_PORT))
+	except socket.error, msg:
+		print("Bind failed. Error Code : " + str(msg[0]) + "Message " + msg[1])
 
-	while True:
-		msg = raw_input("Enter message to send : ")
 
-		try:
-			# Set the whole thing
-			s.sendto(msg, (host, port))
-
-			#receive data from client
-			d = s.recvfrom(1024)
-			reply = d[0]
-			addr = d[1]
-			print "Server reply : " + reply
-			print addr
-		except socket.error, msg:
-			print 'Error Code : ' + str(msg[0]) + ' Message ' + msg[1]
-			sys.exit()
-
+	# When swtich is initialized, send REGISTER_REQUEST message to controller.
+	msg = {"signal":"REGISTER_REQUEST", "id": switch_id}
+	s.sendto(json.dumps(msg).encode(), (CONTROLLER_HOST, CONTROLLER_PORT))
+	neighbors = {}
+	while True:	
+		#receive data from controller
+		print neighbors
+		response, addr = s.recvfrom(2048)
+		response = json.loads(response.decode("utf-8"))
+		signal = response.get("signal")
+		# This is a signal from controller
+		if signal == "REGISTER_RESPONSE":
+			# sends a "KEEP_ALIVE" message to each of the active neightbors
+			# using host/port info provided in the response
+			# This is a dict of dict, {switch_id: {active:bool, host:str, port:int} .. }
+			neighbors = response.get("neighbors")
+			for neighbor_id in neighbors:
+				neighbor = neighbors[neighbor_id]
+				active = neighbor.get("active")
+				if active:
+					addr = (neighbor.get('host'), neighbor.get('port'))
+					request = {"signal":"KEEP_ALIVE", "id": neighbor_id}
+					s.sendto(json.dumps(request).encode(), addr)
+		elif signal == "KEEP_ALIVE":
+			# if the signal is KEEP_ALIVE, update that neighbors to active
+			switch_id = response.get("id")	
+			neighbors[switch_id]["active"] = True
+		# Every k seconds, send to KEEP_ALIVE to each of the neighboring switches.
+			
 if __name__ == "__main__":
 	main()
 
