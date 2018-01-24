@@ -5,10 +5,9 @@ import time
 
 # TODO
 # 1. write switch as class
-# 2. send KEEP_ALIVE, TOPOLOGY_UPDATE requst periodically
+# 2. send KEEP_ALIVE, TOPOLOGY_UPDATE request periodically
 # 3. log the request
-CONTROLLER_PORT = 8000
-CONTROLLER_HOST = "localhost"
+# 4. CONTROLLER_PORT = 8000, CONTROLLER_HOST = "localhost"
 SWITCH_HOST = "localhost"
 
 def main():
@@ -51,11 +50,10 @@ def switch(switch_id, con_host_name, con_port, neighbor_id=None):
 
 	# When swtich is initialized, send REGISTER_REQUEST message to controller.
 	msg = {"signal":"REGISTER_REQUEST", "id": switch_id}
-	s.sendto(json.dumps(msg).encode(), (CONTROLLER_HOST, CONTROLLER_PORT))
+	s.sendto(json.dumps(msg).encode(), (con_host_name, con_port))
 	neighbors = {}
 	while True:	
 		#receive data from controller
-		print neighbors
 		response, addr = s.recvfrom(2048)
 		response = json.loads(response.decode("utf-8"))
 		signal = response.get("signal")
