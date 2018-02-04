@@ -54,6 +54,7 @@ class Switch(object):
 		logging.warning("Send REGISTER_REQUEST to controller\n")
 
 	def send_msg(self, msg, addr):
+		logging.warning("Switch {0} send {1} to Switch {2}".format(self.id, msg["signal"], addr[1]))
 		if isinstance(msg, dict):
 			self.s.sendto(json.dumps(msg).encode(), addr)
 		else:
@@ -89,25 +90,26 @@ class Switch(object):
 				# message to each of the active neighbors
 				with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
 					request = {"signal":"KEEP_ALIVE", "id": self.id}
-					
+					logging.warning("send keep alive to active neighbors")	
+					logging.warning(self.neighbors)
 					futures = {executor.submit(self.send_msg, request, 
 						(self.neighbors[k].get("host"), self.neighbors[k].get("port"))) 
 						for k in self.neighbors 
 						if (self.neighbors[k]["active"] == True and k != self.fail_neighbor)}
 					concurrent.futures.wait(futures)
-
+				logging.warning("after send")
 			# This is a signal from neighbor switch
 			elif signal == "KEEP_ALIVE":
 				# if the signal is KEEP_ALIVE, update that neighbors to active
 				switch_id = str(response.get("id"))
-				print(self.neighbors)
-				print(type(switch_id))
 				neighbor = self.neighbors[switch_id]
 				# Once a switch A receives a KEEP_ALIVE message from a B that is previously considered unreachable, it immediately marks taht neighbor alive and send TOPOLOGY_UPDATE
 				if neighbor["active"] == False:
 					self.neighbors[switch_id]["active"] = True
-					self.neighbors[switch_id]["get_alive_time"] = time.time()
+					self.neighbors[switch_id]["host"] = addr[0]
+					self.neighbors[switch_id]["port"] = addr[1]
 					self.send_topology_update()
+				self.neighbors[switch_id]["get_alive_time"] = time.time()
 				logging.warning("GET KEEP_ALIVE message from switch {0}".format(switch_id))
 			elif signal == "ROUTE_UPDATE":
 				logging.warning("GET ROUTE_UPDATE message")
@@ -115,22 +117,26 @@ class Switch(object):
 	
 	@threaded(daemon=True)
 	def check(self):
-		def _check(neighbor):
-			if (time.time() - neighbor.get("get_alive_time")) >= self.period * 2:
-				self.neighbors[neighbor.get("id")]["active"] = False	
-				self.send_topology_update()
+		logging.warning("check whether neighbors alive")
+		def _check(k, neighbor):
+			if neighbor["active"] == True:
+				if (time.time() - neighbor.get("get_alive_time")) >= self.period * 2:
+					logging.warning("Switch {} is inactive".format(k))
+					self.neighbors[k]["active"] = False	
+					self.send_topology_update()
 	
 		next_call = time.time()
 		while True:
 			neighbors = self.neighbors 
 			with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
-				futures = {executor.submit(_check, neighbors[k]) for k in neighbors}
+				futures = {executor.submit(_check, k, neighbors[k]) for k in neighbors if neighbors[k]["active"] == True}
 				concurrent.futures.wait(futures)
 			next_call = next_call + self.period * 2
 			time.sleep(next_call - time.time())
 
 	@threaded(daemon=True)
 	def update(self):
+		logging.warning("Periodically send message to each of the neighbors\n")
 		next_call = time.time()
 		# Periodically send a KEEP_ALIVE message to each of the neighboring swtiches 
 		while True:
