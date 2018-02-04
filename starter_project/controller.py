@@ -82,12 +82,15 @@ class Controller(object):
     def flush_topology(self, addr):
         # broadcast new topology to all switches
         print('flush topology')
+        compute_path_for_all_switches(self.total_switch_num, self.topology)
 
     def update_topology(self, req, addr):
         '''check if each link is updated'''
         switch_id = req['id']
+        self.switches[switch_id]['utime'] = time.time()
+
         old_neighbor_ids = set(self.get_neighbor_ids(switch_id))
-        old_links = set(_id for _id, link in enumerate(self.topology[switch_id-1]) if link[2])
+        old_links = {_id+1 for _id, link in enumerate(self.topology[switch_id-1]) if link and link['connected']}
         new_links = set(req['live_neighbors'])
         if old_links != new_links:
             print(old_links, new_links)
@@ -116,9 +119,11 @@ class Controller(object):
         for _id, status in self.switches.items():
             if status['active'] and now - status.get('utime', now) > M*K:
                 self.switches[_id] = {'active': False}
+                for id2 in self.get_neighbor_ids(_id):
+                    self.update_link(_id, id2, False)
+                logging.info('switch %s is down', _id)
                 has_dead = True
         if has_dead:
-            logging.info('some switch down')
             self.flush_topology()
         else:
             logging.debug('all status ok')
@@ -156,11 +161,12 @@ def compute_path(topology, source, target, bandwith):
 
 if __name__ == '__main__':
     ctrl = Controller(UDP_HOST, UDP_PORT, './config.txt')
-    # ctrl.watch()
-    ctrl.register_switch({'id': 1}, ('localhost', 8001))
-    ctrl.register_switch({'id': 2}, ('localhost', 8002))
-    ctrl.register_switch({'id': 3}, ('localhost', 8003))
-    ctrl.register_switch({'id': 4}, ('localhost', 8004))
-    ctrl.register_switch({'id': 5}, ('localhost', 8005))
-    ctrl.register_switch({'id': 6}, ('localhost', 8006))
+    ctrl.watch()
+    # ctrl.register_switch({'id': 1}, ('localhost', 8001))
+    # ctrl.register_switch({'id': 2}, ('localhost', 8002))
+    # ctrl.register_switch({'id': 3}, ('localhost', 8003))
+    # ctrl.register_switch({'id': 4}, ('localhost', 8004))
+    # ctrl.register_switch({'id': 5}, ('localhost', 8005))
+    # ctrl.register_switch({'id': 6}, ('localhost', 8006))
+    # ctrl.flush_topology(None)
 
