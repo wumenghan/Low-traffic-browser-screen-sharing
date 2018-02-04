@@ -13,6 +13,8 @@ import concurrent.futures
 # 4. CONTROLLER_PORT = 8000, CONTROLLER_HOST = "localhost"
 # 5. Discuss name of live neighbors with hgp
 SWITCH_HOST = "localhost"
+VERBOSE_LEVEL = logging.DEBUG
+logging.basicConfig(stream=sys.stdout, level=VERBOSE_LEVEL)
 
 def threaded(daemon):
 	def decorator(fn):
@@ -35,6 +37,7 @@ class Switch(object):
 		self.neighbors = {}
 		self.period = 5  # Send update message every 5 seconds.
 		self.fail_neighbor = fail_neighbor
+		self.route_table = {}
 	
 	def init_socket(self):
 		try:
@@ -46,15 +49,18 @@ class Switch(object):
 			self.s.bind((self.host, self.port))
 		except (socket.error, msg):
 			logging.debug("Bind failed. Error Code : " + str(msg[0]) + "Message " + msg[1])
-		logging.warning("Socket init success\n")	
+		logging.info("Socket init success")	
 
 	def connect_host(self):
 		msg = {"signal":"REGISTER_REQUEST", "id":self.id}
 		self.send_msg(msg, (self.con_hostname, self.con_port))
-		logging.warning("Send REGISTER_REQUEST to controller\n")
+		#logging.info("Send REGISTER_REQUEST to Controller")
 
 	def send_msg(self, msg, addr):
-		logging.warning("Switch {0} send {1} to Switch {2}".format(self.id, msg["signal"], addr[1]))
+		if int(addr[1]) == 8000:
+			logging.info("Switch {0} send {1} to Controller".format(self.id, msg["signal"]))
+		else:
+			logging.info("Switch {0} send {1} to Switch {2}".format(self.id, msg["signal"], int(addr[1]) - 8000))
 		if isinstance(msg, dict):
 			self.s.sendto(json.dumps(msg).encode(), addr)
 		else:
@@ -77,27 +83,26 @@ class Switch(object):
 
 	@threaded(daemon=False)
 	def receive(self):
-		logging.warning("Listening to responses.\n")
+		logging.info("Listening to responses.")
 		while True:	
 			#receive data from controller
 			response, addr = self.receive_msg()
 			signal = response.get("signal")
 			# This is a signal from controller
 			if signal == "REGISTER_RESPONSE":
-				logging.warning("GET REGISTER_RESPONSE message")
+				logging.info("Switch {} receive REGISTER_RESPONSE message".format(self.id))
 				self.neighbors = response.get("neighbors") # a dict of this switch's neighbors
 				# upon receive REGISTER_RESPONSE from controller. Send "KEEP_ALIVE"
 				# message to each of the active neighbors
 				with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
 					request = {"signal":"KEEP_ALIVE", "id": self.id}
-					logging.warning("send keep alive to active neighbors")	
-					logging.warning(self.neighbors)
+					#logging.info("send keep alive to active neighbors")	
+					logging.info(self.neighbors)
 					futures = {executor.submit(self.send_msg, request, 
 						(self.neighbors[k].get("host"), self.neighbors[k].get("port"))) 
 						for k in self.neighbors 
 						if (self.neighbors[k]["active"] == True and k != self.fail_neighbor)}
 					concurrent.futures.wait(futures)
-				logging.warning("after send")
 			# This is a signal from neighbor switch
 			elif signal == "KEEP_ALIVE":
 				# if the signal is KEEP_ALIVE, update that neighbors to active
@@ -110,18 +115,18 @@ class Switch(object):
 					self.neighbors[switch_id]["port"] = addr[1]
 					self.send_topology_update()
 				self.neighbors[switch_id]["get_alive_time"] = time.time()
-				logging.warning("GET KEEP_ALIVE message from switch {0}".format(switch_id))
+				logging.info("Switch {0} receive KEEP_ALIVE message from switch {1}".format(self.id, switch_id))
 			elif signal == "ROUTE_UPDATE":
-				logging.warning("GET ROUTE_UPDATE message")
-				pass
+				logging.info("Receive ROUTE_UPDATE message")
+				self.route_table = response
+				logging.info("Get {}".format(response))
 	
 	@threaded(daemon=True)
 	def check(self):
-		logging.warning("check whether neighbors alive")
 		def _check(k, neighbor):
 			if neighbor["active"] == True:
 				if (time.time() - neighbor.get("get_alive_time")) >= self.period * 2:
-					logging.warning("Switch {} is inactive".format(k))
+					logging.info("Switch {} is inactive".format(k))
 					self.neighbors[k]["active"] = False	
 					self.send_topology_update()
 	
@@ -136,7 +141,6 @@ class Switch(object):
 
 	@threaded(daemon=True)
 	def update(self):
-		logging.warning("Periodically send message to each of the neighbors\n")
 		next_call = time.time()
 		# Periodically send a KEEP_ALIVE message to each of the neighboring swtiches 
 		while True:
@@ -160,21 +164,18 @@ class Switch(object):
 		self.update()
 		self.check()
 
-
-
 def main():
 	argv = sys.argv
-	
 	if len(argv) < 3:
 		print("Enter: <switchID> <controller hostname> <controller port>")
 		return 
 	else:
-		if argv[3] == "-f":
-			switch_id, con_host_name, con_port, _, neighbor_id = argv
-			switch = Switch(int(switch_id), con_host_name, int(con_port), neighbor_id, True)
+		if len(argv) == 6 and argv[4] == "-f":
+			_, switch_id, con_host_name, con_port, _, neighbor_id = argv
+			switch = Switch(int(switch_id), con_host_name, int(con_port), neighbor_id)
 			switch.start()
 		else:
-			print(argv)
+	#		print(argv)
 			_, switch_id, con_host_name, con_port = argv
 			switch = Switch(int(switch_id), con_host_name, int(con_port))
 			switch.start()	
