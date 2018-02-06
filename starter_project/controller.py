@@ -104,7 +104,7 @@ class Controller(object):
                 (bandwidth, path) = computed_pairs[(dest, src)]
                 data.append((dest, bandwidth, path[-2]))
             else:
-                print('unknown (src, dest) pair', (src, dest))
+                logger.warning('unknown (src, dest) pair', (src, dest))
         addr = (self.switches[src]['host'], self.switches[src]['port'])
         logger.info('send ROUTE_UPDATE to switch %s: %s', src, data)
         self.mysend({'signal': 'ROUTE_UPDATE', 'route_table': data}, addr)
@@ -118,8 +118,9 @@ class Controller(object):
         old_links = {_id+1 for _id, link in enumerate(self.topology[switch_id-1]) \
                      if link and link['connected']}
         new_links = set(req['live_neighbors'])
+        logger.debug('receive UPDATE_TOPOLOGY from switch %s', switch_id)
         if old_links != new_links:
-            logger.info('receive UPDATE_TOPOLOGY from switch %s', switch_id)
+            logger.info('UPDATE_TOPOLOGY from switch %s has link updates', switch_id)
             logger.debug('old links %s, new links %s', old_links, new_links)
             # new link connection
             for _id in (new_links - old_links):

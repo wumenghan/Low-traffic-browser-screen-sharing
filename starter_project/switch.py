@@ -75,12 +75,14 @@ class Switch(object):
 	
 	def send_topology_update(self):
 		# Sends a TOPOLOGY_UPDATE message to the controller.			
-		live_neighbors = [int(key) for key in self.neighbors if (self.neighbors[key]["active"] == True and key != self.fail_neighbor)]
+		live_neighbors = [int(key) for key in self.neighbors if self.is_neighbor_active(key)]
 		# change live neighbor to a list of active neighbor id.
 		request = {"id":self.id, "signal":"TOPOLOGY_UPDATE",  "live_neighbors":live_neighbors} 
 		addr = (self.con_hostname, self.con_port)
-		self.send_msg(request, addr)	
+		self.send_msg(request, addr)
 
+	def is_neighbor_active(self, _id):
+		return self.neighbors[_id]["active"] and _id != self.fail_neighbor
 
 	@threaded(daemon=False)
 	def receive(self):
@@ -95,6 +97,9 @@ class Switch(object):
 				self.neighbors = response.get("neighbors") # a dict of this switch's neighbors
 				# upon receive REGISTER_RESPONSE from controller. Send "KEEP_ALIVE"
 				# message to each of the active neighbors
+				for _id, neighbor in self.neighbors.items():
+					if neighbor['active']:
+						neighbor['alive_time'] = time.time()
 				with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
 					request = {"signal":"KEEP_ALIVE", "id": self.id}
 					#logger.info("send keep alive to active neighbors")	
@@ -102,7 +107,7 @@ class Switch(object):
 					futures = {executor.submit(self.send_msg, request, 
 						(self.neighbors[k].get("host"), self.neighbors[k].get("port"))) 
 						for k in self.neighbors 
-						if (self.neighbors[k]["active"] == True and k != self.fail_neighbor)}
+						if self.is_neighbor_active(k)}
 					concurrent.futures.wait(futures)
 			# This is a signal from neighbor switch
 			elif signal == "KEEP_ALIVE":
@@ -110,12 +115,14 @@ class Switch(object):
 				switch_id = str(response.get("id"))
 				neighbor = self.neighbors[switch_id]
 				# Once a switch A receives a KEEP_ALIVE message from a B that is previously considered unreachable, it immediately marks taht neighbor alive and send TOPOLOGY_UPDATE
-				if neighbor["active"] == False:
+				if switch_id == self.fail_neighbor:
+					continue
+				if not neighbor["active"]:
 					self.neighbors[switch_id]["active"] = True
 					self.neighbors[switch_id]["host"] = addr[0]
 					self.neighbors[switch_id]["port"] = addr[1]
 					self.send_topology_update()
-				self.neighbors[switch_id]["get_alive_time"] = time.time()
+				self.neighbors[switch_id]["alive_time"] = time.time()
 				logger.debug("Switch {0} receive KEEP_ALIVE message from switch {1}".format(self.id, switch_id))
 			elif signal == "ROUTE_UPDATE":
 				logger.info("Receive ROUTE_UPDATE message")
@@ -126,7 +133,7 @@ class Switch(object):
 	def check(self):
 		def _check(k, neighbor):
 			if neighbor["active"] == True:
-				if (time.time() - neighbor.get("get_alive_time")) >= self.period * 2:
+				if (time.time() - neighbor.get("alive_time")) >= self.period * 2:
 					logger.info("Switch {} is inactive".format(k))
 					self.neighbors[k]["active"] = False	
 					self.send_topology_update()
