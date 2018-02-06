@@ -75,7 +75,7 @@ class Switch(object):
 	
 	def send_topology_update(self):
 		# Sends a TOPOLOGY_UPDATE message to the controller.			
-		live_neighbors = [int(key) for key in self.neighbors if self.neighbors[key]["active"] == True]
+		live_neighbors = [int(key) for key in self.neighbors if (self.neighbors[key]["active"] == True and key != self.fail_neighbor)]
 		# change live neighbor to a list of active neighbor id.
 		request = {"id":self.id, "signal":"TOPOLOGY_UPDATE",  "live_neighbors":live_neighbors} 
 		addr = (self.con_hostname, self.con_port)
