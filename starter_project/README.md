@@ -11,6 +11,6 @@ $ ./switch.py 1 localhost 8000
 # Switch id 1 joins the network from 127.0.0.1:8001
 
 
-$ ./switch.py 1 localhost 8000
-$ ./switch.py 1 localhost 8000
+$ ./switch.py 2 localhost 8000
+$ ./switch.py 3 localhost 8000
 ```

@@ -9,16 +9,15 @@ import socket
 import json
 import time
 import datetime
-import logging
 import sys
-import heapq
 import threading
-import concurrent.futures 
+import concurrent.futures
+
+from utils import compute_path_for_all_switches, logger
 
 UDP_HOST = 'localhost'   # or socket.gethostname()
 UDP_PORT = 8000
-VERBOSE_LEVEL = logging.INFO
-logging.basicConfig(stream=sys.stdout, level=VERBOSE_LEVEL)
+
 K = 5
 M = 3
 NUM_WORKERS = 4
@@ -67,14 +66,15 @@ class Controller(object):
 
     def register_switch(self, req, addr):
         switch_id = req['id']
-        logging.info('REGISTER_REQUEST: Switch id {} joins the network from {}:{}'.format(switch_id, addr[0], addr[1]))
+        logger.info('receive REGISTER_REQUEST from switch {} at {}:{}'.format(switch_id, addr[0], addr[1]))
         self.switches[switch_id] = {'active': True, 'host': addr[0], 'port': addr[1]}
         neighbor_ids = self.get_neighbor_ids(switch_id)
         neighbors = {_id: self.switches[_id] for _id in neighbor_ids}  # switch_id: status_dict
-        logging.debug('New status of all switches: %s', self.switches)
-        logging.debug('Neighbors of switch id {}: %s \n'.format(switch_id), neighbors)
+        logger.debug('New status of all switches: %s', self.switches)
+        logger.debug('Neighbors of switch id {}: %s \n'.format(switch_id), neighbors)
         res = {'signal': 'REGISTER_RESPONSE', 'neighbors': neighbors}
-        logging.info('REGISTER_RESPONSE: switch id {}'.format(switch_id))
+        logger.info('send REGISTER_RESPONSE to switch {}'.format(switch_id))
+        logger.info('%s', neighbors)
         self.mysend(res, addr)
 
         if self.are_all_switches_active():
@@ -85,7 +85,7 @@ class Controller(object):
 
     def flush_topology(self):
         # broadcast new topology to all switches
-        logging.debug('flush topology')
+        logger.debug('flush topology')
         active_switches = [_id for _id in self.switches if self.switches[_id]['active']]
         computed_pairs = compute_path_for_all_switches(self.total_switch_num, self.topology, active_switches)
         with concurrent.futures.ThreadPoolExecutor(max_workers=NUM_WORKERS) as executor:
@@ -99,35 +99,36 @@ class Controller(object):
                 continue
             if (src, dest) in computed_pairs:
                 (bandwidth, path) = computed_pairs[(src, dest)]
-                data.append((dest, path[1], bandwidth))
+                data.append((dest, bandwidth, path[1]))
             elif (dest, src) in computed_pairs:
                 (bandwidth, path) = computed_pairs[(dest, src)]
-                data.append((dest, path[-2], bandwidth))
+                data.append((dest, bandwidth, path[-2]))
             else:
                 print('unknown (src, dest) pair', (src, dest))
         addr = (self.switches[src]['host'], self.switches[src]['port'])
-        logging.info('ROUTE_UPDATE to switch id %s', src)
-        self.mysend({'signal': 'ROUTE_UPDATE', 'table': data}, addr)
+        logger.info('send ROUTE_UPDATE to switch %s: %s', src, data)
+        self.mysend({'signal': 'ROUTE_UPDATE', 'route_table': data}, addr)
 
     def update_topology(self, req, addr):
-        '''check if each link is updated'''
+        '''check if each link has updates'''
         switch_id = req['id']
         self.switches[switch_id]['utime'] = time.time()
 
         old_neighbor_ids = set(self.get_neighbor_ids(switch_id))
-        old_links = {_id+1 for _id, link in enumerate(self.topology[switch_id-1]) if link and link['connected']}
+        old_links = {_id+1 for _id, link in enumerate(self.topology[switch_id-1]) \
+                     if link and link['connected']}
         new_links = set(req['live_neighbors'])
         if old_links != new_links:
-            logging.info('UPDATE_TOPOLOGY from switch %s', switch_id)
-            logging.debug('old links %s, new links %s', old_links, new_links)
+            logger.info('receive UPDATE_TOPOLOGY from switch %s', switch_id)
+            logger.debug('old links %s, new links %s', old_links, new_links)
             # new link connection
             for _id in (new_links - old_links):
                 self.update_link(switch_id, _id, True)
-                # logging.info('link %s-%s recover', switch_id, _id)
+                # logger.info('link %s-%s recover', switch_id, _id)
             # fail link connection
             for _id in (old_links - new_links):
                 self.update_link(switch_id, _id, False)
-                logging.info('link %s-%s is down', switch_id, _id)
+                logger.info('link %s-%s is down', switch_id, _id)
             self.flush_topology()
 
     def timer(self, period=K):
@@ -149,15 +150,15 @@ class Controller(object):
                 self.switches[_id] = {'active': False}
                 for id2 in self.get_neighbor_ids(_id):
                     self.update_link(_id, id2, False)
-                logging.info('Switch %s is down', _id)
+                logger.info('Switch %s is down', _id)
                 has_dead = True
         if has_dead:
             self.flush_topology()
         else:
-            logging.debug('all status ok')
+            logger.debug('all status ok')
 
     def watch(self):
-        logging.info('Starting controller at {}:{}...'.format(self.host, self.port))
+        logger.info('Starting controller at {}:{}...'.format(self.host, self.port))
         # start timer
         timer_thread = threading.Thread(target=self.timer)
         timer_thread.daemon = True
@@ -172,40 +173,8 @@ class Controller(object):
             elif signal == 'TOPOLOGY_UPDATE':
                 self.update_topology(req, addr)
             else:
-                logging.warn('Unknown signal: %s', signal)
+                logger.warn('Unknown signal: %s', signal)
 
-
-def compute_path_for_all_switches(size, topology, active_switches):
-    computed_pairs = {}
-    # print(topology)
-    # print(active_switches)
-    for src in active_switches:
-        for dest in active_switches:
-            if src != dest and ((src, dest) not in computed_pairs and (dest, src) not in computed_pairs):
-                compute_path(topology, src, dest, computed_pairs)
-    # print(computed_pairs)
-    return computed_pairs
-
-def compute_path(topology, src, dest, computed_pairs):
-    hp = [(float('-inf'), src, [])]
-    seen = set()
-    while hp:
-        (bandwidth, id1, path) = heapq.heappop(hp)
-        bandwidth = -bandwidth
-        if id1 not in seen:
-            seen.add(id1)
-            path = path + [id1]
-            if bandwidth and src != id1 and ((src, id1) not in computed_pairs and (id1, src) not in computed_pairs):
-                computed_pairs[(src, id1)] = (bandwidth, path)
-            if id1 == dest:
-                return
-
-            for id2, link in enumerate(topology[id1-1]):
-                if link and link['connected']:
-                    id2 = id2 + 1
-                    if id2 not in seen:  # can append duplicate node as long as it is not seen
-                        heapq.heappush(hp, (-min(bandwidth, link['bandwidth']), id2, path))
-    computed_pairs[(src, dest)] = []
 
 
 

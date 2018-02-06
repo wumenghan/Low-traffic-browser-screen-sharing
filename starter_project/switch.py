@@ -1,10 +1,13 @@
+#!/usr/bin/env python3
+
 import sys
 import json
 import time
 import socket 
-import logging
 import threading 
 import concurrent.futures
+
+from utils import logger
 
 # TODO
 # 1. write switch as class - DONE
@@ -13,8 +16,6 @@ import concurrent.futures
 # 4. CONTROLLER_PORT = 8000, CONTROLLER_HOST = "localhost"
 # 5. Discuss name of live neighbors with hgp
 SWITCH_HOST = "localhost"
-VERBOSE_LEVEL = logging.DEBUG
-logging.basicConfig(stream=sys.stdout, level=VERBOSE_LEVEL)
 
 def threaded(daemon):
 	def decorator(fn):
@@ -43,24 +44,24 @@ class Switch(object):
 		try:
 			self.s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)	
 		except sockect.error:
-			logging.debug("Fail to create socket\n")
+			logger.debug("Fail to create socket\n")
 			sys.exit()
 		try:
 			self.s.bind((self.host, self.port))
 		except (socket.error, msg):
-			logging.debug("Bind failed. Error Code : " + str(msg[0]) + "Message " + msg[1])
-		logging.info("Socket init success")	
+			logger.debug("Bind failed. Error Code : " + str(msg[0]) + "Message " + msg[1])
+		logger.info("Socket init success")	
 
 	def connect_host(self):
 		msg = {"signal":"REGISTER_REQUEST", "id":self.id}
 		self.send_msg(msg, (self.con_hostname, self.con_port))
-		#logging.info("Send REGISTER_REQUEST to Controller")
+		#logger.info("Send REGISTER_REQUEST to Controller")
 
 	def send_msg(self, msg, addr):
 		if int(addr[1]) == 8000:
-			logging.info("Switch {0} send {1} to Controller".format(self.id, msg["signal"]))
+			logger.debug("Switch {0} send {1} to Controller".format(self.id, msg["signal"]))
 		else:
-			logging.info("Switch {0} send {1} to Switch {2}".format(self.id, msg["signal"], int(addr[1]) - 8000))
+			logger.debug("Switch {0} send {1} to Switch {2}".format(self.id, msg["signal"], int(addr[1]) - 8000))
 		if isinstance(msg, dict):
 			self.s.sendto(json.dumps(msg).encode(), addr)
 		else:
@@ -83,21 +84,21 @@ class Switch(object):
 
 	@threaded(daemon=False)
 	def receive(self):
-		logging.info("Listening to responses.")
+		logger.info("Listening to responses.")
 		while True:	
 			#receive data from controller
 			response, addr = self.receive_msg()
 			signal = response.get("signal")
 			# This is a signal from controller
 			if signal == "REGISTER_RESPONSE":
-				logging.info("Switch {} receive REGISTER_RESPONSE message".format(self.id))
+				logger.info("Switch {} receive REGISTER_RESPONSE message: ".format(self.id))
 				self.neighbors = response.get("neighbors") # a dict of this switch's neighbors
 				# upon receive REGISTER_RESPONSE from controller. Send "KEEP_ALIVE"
 				# message to each of the active neighbors
 				with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
 					request = {"signal":"KEEP_ALIVE", "id": self.id}
-					#logging.info("send keep alive to active neighbors")	
-					logging.info(self.neighbors)
+					#logger.info("send keep alive to active neighbors")	
+					logger.info(self.neighbors)
 					futures = {executor.submit(self.send_msg, request, 
 						(self.neighbors[k].get("host"), self.neighbors[k].get("port"))) 
 						for k in self.neighbors 
@@ -115,18 +116,18 @@ class Switch(object):
 					self.neighbors[switch_id]["port"] = addr[1]
 					self.send_topology_update()
 				self.neighbors[switch_id]["get_alive_time"] = time.time()
-				logging.info("Switch {0} receive KEEP_ALIVE message from switch {1}".format(self.id, switch_id))
+				logger.debug("Switch {0} receive KEEP_ALIVE message from switch {1}".format(self.id, switch_id))
 			elif signal == "ROUTE_UPDATE":
-				logging.info("Receive ROUTE_UPDATE message")
+				logger.info("Receive ROUTE_UPDATE message")
 				self.route_table = response
-				logging.info("Get {}".format(response))
+				logger.info("Get {}".format(response))
 	
 	@threaded(daemon=True)
 	def check(self):
 		def _check(k, neighbor):
 			if neighbor["active"] == True:
 				if (time.time() - neighbor.get("get_alive_time")) >= self.period * 2:
-					logging.info("Switch {} is inactive".format(k))
+					logger.info("Switch {} is inactive".format(k))
 					self.neighbors[k]["active"] = False	
 					self.send_topology_update()
 	
