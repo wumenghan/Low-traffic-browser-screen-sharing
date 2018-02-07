@@ -87,24 +87,33 @@ class Controller(object):
         # broadcast new topology to all switches
         logger.debug('flush topology')
         active_switches = [_id for _id in self.switches if self.switches[_id]['active']]
+        logger.debug('active switches: %s', active_switches)
         computed_pairs = compute_path_for_all_switches(self.total_switch_num, self.topology, active_switches)
+        # print('computed pairs', computed_pairs)
         with concurrent.futures.ThreadPoolExecutor(max_workers=NUM_WORKERS) as executor:
             tasks = {executor.submit(self.do_flush, src, active_switches, computed_pairs) for src in active_switches}
             concurrent.futures.wait(tasks)
 
     def do_flush(self, src, active_switches, computed_pairs):
+        # print('do flush')
         data = []
         for dest in active_switches:
             if src == dest:
                 continue
             if (src, dest) in computed_pairs:
-                (bandwidth, path) = computed_pairs[(src, dest)]
-                data.append((dest, bandwidth, path[1]))
+                if computed_pairs[(src, dest)]:
+                    (bandwidth, path) = computed_pairs[(src, dest)]
+                    data.append((dest, bandwidth, path[1]))
+                else:
+                    data.append((dest, '-', '-'))
             elif (dest, src) in computed_pairs:
-                (bandwidth, path) = computed_pairs[(dest, src)]
-                data.append((dest, bandwidth, path[-2]))
+                if computed_pairs[(dest, src)]:
+                    (bandwidth, path) = computed_pairs[(dest, src)]
+                    data.append((dest, bandwidth, path[-2]))
+                else:
+                    data.append((dest, '-', '-'))
             else:
-                logger.warning('unknown (src, dest) pair', (src, dest))
+                logger.warning('unknown (src, dest) pair %s', (src, dest))
         addr = (self.switches[src]['host'], self.switches[src]['port'])
         logger.info('send ROUTE_UPDATE to switch %s: %s', src, data)
         self.mysend({'signal': 'ROUTE_UPDATE', 'route_table': data}, addr)
@@ -125,7 +134,7 @@ class Controller(object):
             # new link connection
             for _id in (new_links - old_links):
                 self.update_link(switch_id, _id, True)
-                # logger.info('link %s-%s recover', switch_id, _id)
+                logger.info('link %s-%s is on', switch_id, _id)
             # fail link connection
             for _id in (old_links - new_links):
                 self.update_link(switch_id, _id, False)
