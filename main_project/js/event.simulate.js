@@ -2,8 +2,11 @@
 
 // Credit: https://github.com/kangax/protolicious/blob/master/event.simulate.js
 // Credit: https://stackoverflow.com/questions/6157929/how-to-simulate-a-mouse-click-using-javascript
+(function() {
 
-function simulate(element, eventName)
+var Simulator = window.Simulator = window.Simulator || {};
+
+Simulator.simulate = function(element, eventName)
 {
     var options = extend(defaultOptions, arguments[2] || {});
     var oEvent, eventType = null;
@@ -26,15 +29,15 @@ function simulate(element, eventName)
         else
         {
             oEvent.initMouseEvent(eventName, options.bubbles, options.cancelable, document.defaultView,
-            options.button, options.pointerX, options.pointerY, options.pointerX, options.pointerY,
+            options.button, options.x, options.y, options.x, options.y,
             options.ctrlKey, options.altKey, options.shiftKey, options.metaKey, options.button, element);
         }
         element.dispatchEvent(oEvent);
     }
     else
     {
-        options.clientX = options.pointerX;
-        options.clientY = options.pointerY;
+        options.clientX = options.x;
+        options.clientY = options.y;
         var evt = document.createEventObject();
         oEvent = extend(evt, options);
         element.fireEvent('on' + eventName, oEvent);
@@ -53,8 +56,8 @@ var eventMatchers = {
     'MouseEvents': /^(?:click|dblclick|mouse(?:down|up|over|move|out))$/
 }
 var defaultOptions = {
-    pointerX: 0,
-    pointerY: 0,
+    x: 0,
+    y: 0,
     button: 0,
     ctrlKey: false,
     altKey: false,
@@ -63,3 +66,5 @@ var defaultOptions = {
     bubbles: true,
     cancelable: true
 }
+
+})();

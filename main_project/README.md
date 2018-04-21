@@ -12,6 +12,7 @@ $ python -m SimpleHTTPServer
 * Select by Xpath, `jquery.xpath.js` - <https://stackoverflow.com/questions/6453269/jquery-select-element-by-xpath> and <https://github.com/ilinsky/jquery-xpath>
 * Web video player, [video.js](https://videojs.com/) and [videojs-panorama](https://github.com/yanwsh/videojs-panorama) which supports 360 video
 * [Free 360 video download](https://www.mettle.com/360vr-master-series-free-360-downloads-page/)
+* [Custom Mouse Pointer in JS](https://www.youtube.com/watch?v=QyeBCBYXjfw)
 
 
 ## Fatal Issues with Iframe:
@@ -26,3 +27,4 @@ $ python -m SimpleHTTPServer
 * Simulate mouse cursor
 * Input and Keystroke
 * Drag and drop
+* Check if we can use any simple Front-end unit testing framework

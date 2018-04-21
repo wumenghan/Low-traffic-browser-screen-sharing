@@ -1,4 +1,6 @@
-
+// replay commands
+// Author: Gaoping Huang
+// Since: March 2018
 
 (function($) {
 
@@ -7,7 +9,12 @@
 var mode = 'replay' || 'realtime';
 
 var specialHandlers = {
-  'resize': resizeHandler,
+  resize: function resizeHandler(element, args) {
+    window.resizeTo(args.width, args.height);
+  },
+  cursorMove: function moveCursor(element, args) {
+    Cursor.moveTo(args.x, args.y);
+  },
 }
 
 $(document).ready(function() {
@@ -23,6 +30,7 @@ $(document).ready(function() {
 
 function startReplay() {
   var commands = loadCommands();
+  Cursor.createCursor();
   playCommand(commands);
 }
 
@@ -41,27 +49,37 @@ function loadCommands() {
     //   args: {width: 800, height: 600}
     // },
     {
-      delay: 2000,
+      delay: 200,
+      eventName: 'cursorMove',
+      args: {x: 65 , y: 58},
+    },
+    {
+      delay: 500,
       eventName: 'click',
-      args: {pointerX: 65 , pointerY: 58},
+      args: {x: 65 , y: 58},
       xpath: 'id("first-btn")'
+    },
+    {
+      delay: 200,
+      eventName: 'cursorMove',
+      args: {x: 206 , y: 42},
+    },
+    {
+      delay: 1000,
+      eventName: 'click',
+      args: {x: 206 , y: 42},
+      xpath: 'BODY/P[1]/BUTTON[1]'
     },
     // {
     //   delay: 2000,
     //   eventName: 'click',
-    //   args: {pointerX: 206 , pointerY: 42},
-    //   xpath: 'BODY/P[1]/BUTTON[1]'
-    // },
-    // {
-    //   delay: 2000,
-    //   eventName: 'click',
-    //   args: {pointerX: 117 , pointerY: 157},
+    //   args: {x: 117 , y: 157},
     //   xpath: 'id("second-p")/A[1]'
     // },
     // {
     //   delay: 2000,
     //   eventName: 'click',
-    //   args: {pointerX: 492 , pointerY: 253},
+    //   args: {x: 492 , y: 253},
     //   xpath: 'id("second-p")/BUTTON[2]'
     // },
   ];
@@ -89,7 +107,7 @@ function playCommand(commandQueue) {
     }
     else {
       // console.log(xpath, getElementByXpath(xpath))
-      simulate(getElementByXpath(xpath), eventName, args);
+      Simulator.simulate(Xpath.getElementByXpath(xpath), eventName, args);
     }
 
     // call the rest commandQueue
@@ -97,13 +115,11 @@ function playCommand(commandQueue) {
   }, delay);
 }
 
-function resizeHandler(element, args) {
-  window.resizeTo(args.width, args.height);
-}
+
 
 function recordMouseClick() {
   $("body").on('click', function(evt) {
-    console.log('clicked at', evt.clientX, evt.clientY, 'xpath:', getPathTo(evt.target));
+    console.log('clicked at', evt.clientX, evt.clientY, 'xpath:', Xpath.getPathTo(evt.target));
 
     // alert('clicked at'+ evt.clientX+ evt.clientY);
   })

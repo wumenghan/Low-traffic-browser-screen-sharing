@@ -1,7 +1,11 @@
+(function() {
+
+var Xpath = window.Xpath = window.Xpath || {};
 
 
 // credit: https://stackoverflow.com/a/2631931/4246348
-function getPathTo(element) {
+// keep the function name for recursive call
+Xpath.getPathTo = function getPathTo(element) {
     if (element.id!=='')
         return 'id("'+element.id+'")';
     if (element===document.body)
@@ -19,9 +23,12 @@ function getPathTo(element) {
 }
 
 // by Gaoping
-function getAllElementsByXpath(xpath) {
+Xpath.getAllElementsByXpath = function(xpath) {
   return document.evaluate(xpath, document.documentElement);
 }
-function getElementByXpath(xpath) {
+Xpath.getElementByXpath = function(xpath) {
   return document.evaluate(xpath, document.documentElement).iterateNext();
 }
+
+
+})();
