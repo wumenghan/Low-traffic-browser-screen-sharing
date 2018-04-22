@@ -70,12 +70,40 @@ function loadCommands() {
       args: {x: 206 , y: 42},
       xpath: 'BODY/P[1]/BUTTON[1]'
     },
-    // {
-    //   delay: 2000,
-    //   eventName: 'click',
-    //   args: {x: 117 , y: 157},
-    //   xpath: 'id("second-p")/A[1]'
-    // },
+    {
+      delay: 2000,
+      eventName: 'cursorMove',
+      args: {x: 467 , y: 357},
+    },
+    {
+      delay: 3000,
+      eventName: 'mousedown',
+      args: {x: 467 , y: 357},
+      xpath: 'id("myplayer")/CANVAS[1]'
+    },
+    {
+      delay: 100,
+      eventName: 'mouseup',
+      args: {x: 467 , y: 357},
+      xpath: 'id("myplayer")/CANVAS[1]'
+    },
+    {
+      delay: 2000,
+      eventName: 'cursorMove',
+      args: {x: 252 , y: 434},
+    },
+    {
+      delay: 100,
+      eventName: 'mousedown',
+      args: {x: 252 , y: 434},
+      xpath: 'id("myplayer")/CANVAS[1]'
+    },
+    {
+      delay: 100,
+      eventName: 'mouseup',
+      args: {x: 252 , y: 434},
+      xpath: 'id("myplayer")/CANVAS[1]'
+    },
     // {
     //   delay: 2000,
     //   eventName: 'click',
