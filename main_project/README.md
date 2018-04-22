@@ -21,7 +21,11 @@ $ python -m SimpleHTTPServer
 * Therefore, it's impossible to embed Youtube.
 * Solution: use [video.js](https://videojs.com/) to load video in the same page.
 
-
+## Keynotes:
+Simulate mouse events on video player
+* Have to use "mousedown" and "mouseup", not "click" event
+* Must pass the correct clicking XY, not 0,0
+* The target is the canvas (created by videojs-panorama), not the video
 
 ## TODO:
 * Simulate mouse cursor
