@@ -6,34 +6,26 @@
 */
 $(document).ready(function() {
 	var socket = io('https://crowd.ecn.purdue.edu', {path:'/10/socket.io'});
-	var player = videojs('myplayer',function(){ 
-		this.panorama({
-			clickAndDrag: true
-		});
-	});	
-
-	var commands = []; // This is a list of command obj;
-	player.panorama({
-    	clickAndDrag: true,
-    	callback: function () {
-      player.play();
-    }
+	var myplayer = videojs('myplayer');
+	
+	myplayer.panorama({
+		clickAndDrag: true,
 	});
-
+	
 	var d = new Date();
-	var initStatus =  getInitStatus();
+	var initStatus = getInitStatus();
 	var startTime = d.getTime();
 	var eventRecord = [];
 	recordEvent(eventRecord);
 	//setInterval(socket.emit('worker_action', eventRecord), 1000);
-	setInterval( function() {
+	socket.emit('init_status', initStatus);
+	setInterval(function() {
 		socket.emit('worker_action', eventRecord)}
 	, 1000);
 });
 
 
 function recordEvent(eventRecord) {
-	//	var ojb = {delay:, eventName:, args:, xpath:, eventContent:};
 	var d = new Date();	
 	var startTime = d.getTime();
 	$(window).on('click', record);
@@ -50,9 +42,8 @@ function recordEvent(eventRecord) {
 		var delay = eventTime - startTime;
 		var eventName = evt.type;
 		var args = {x: evt.clientX, y:evt.clientY};
-		eventRecord.push({delay:delay, eventName:eventName, args:args, xpath: getPathTo(evt.target)});	
+		eventRecord.push({delay:delay, eventName:eventName, args:args, xpath: Xpath.getPathTo(evt.target)});	
 		startTime = eventTime;
-		console.log(eventRecord);
 	}
 }
 
@@ -62,9 +53,9 @@ function getInitStatus() {
 	var target = $(window);
 	init_status['width'] = target.width();
 	init_status['height'] = target.height();
-	target.on('mousemove', function(evt) {
+	init_status['mouse_pos'] = [0, 0];
+	target.on('mouseover', function(evt) {
 		init_status['mouse_pos'] = [evt.clientX, evt.clientY];		
-		//	target.off('mousemove');
 	});
 	return init_status;
 }

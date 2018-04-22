@@ -17,10 +17,14 @@
       Start offline replay
     </button>
   </p>
-
+  <script src="./socket.io/socket.io.js"></script>	
   <script>
+	var socket = io("https://crowd.ecn.purdue.edu", {path:"/10/socket.io"});
+	socket.on("worker_init_status", function(msg) {
+		// msg = {width:x, height:y, mouse_pos:[x, y]}
+	});
     function openWin(mode) {
-        myWindow = window.open("./demo.html", "", "width=800, height=600");  // Opens a new window
+        myWindow = window.open("./demo.html", "", "width=600, height=400");  // Opens a new window
     }
   </script>
 
