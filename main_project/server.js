@@ -1,3 +1,9 @@
+/*
+ * Author: Meng-Han Wu
+ * Server code to for connecting worker and rqester
+ *
+ */
+
 var express = require("express");
 var app = express();
 var http = require("http").Server(app);
@@ -31,6 +37,7 @@ io.on("connection", function(socket) {
 
 	socket.on("worker_action", function(msg) {
 		io.emit("requester", msg);
+		console.log(msg);
 	});
 	
 	socket.on("worker_request_help", function(msg) {
