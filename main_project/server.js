@@ -28,12 +28,14 @@ io.on("connection", function(socket) {
 		console.log(msg);
 		io.emit("worker_init_status", msg);	
 	});
+
 	socket.on("worker_action", function(msg) {
-		console.log(msg);
-		console.log(msg.length);
 		io.emit("requester", msg);
 	});
-
+	
+	socket.on("worker_request_help", function(msg) {
+		console.log("worker ask for help");	
+	});
 
 });
 
