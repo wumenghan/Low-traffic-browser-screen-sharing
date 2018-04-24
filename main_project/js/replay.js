@@ -3,19 +3,21 @@
 // Since: March 2018
 
 (function($) {
-
+'use strict';
 
 var url = location.href;
 var mode = UrlHelper.searchUrlbyKey(url, 'mode') || 'replay';  // 'replay' || 'realtime';
 
-var specialHandlers = {
-  resize: function resizeHandler(element, args) {
-    window.resizeTo(args.width, args.height);
-  },
-  cursorMove: function moveCursor(element, args) {
-    Cursor.moveTo(args.x, args.y);
-  },
-}
+// var geventQueue = [];  // global command queue
+
+// var specialHandlers = {
+//   resize: function resizeHandler(element, args) {
+//     window.resizeTo(args.width, args.height);
+//   },
+//   mousemove: function moveCursor(element, args) {
+//     Cursor.moveTo(args.x, args.y);
+//   },
+// }
 
 $(document).ready(function() {
   recordMouseClick();
@@ -28,19 +30,142 @@ $(document).ready(function() {
   }
 });
 
-function startReplay() {
-  var commands = loadCommands();
-  Cursor.createCursor();
-  playCommand(commands);
+class EventPlayer {
+  constructor() {
+    this.eventQueue = [];
+    this.socket = null;
+    // notice: mousemove is in specialEvents
+    this.commonEvents = ["click", "dbclick", "mousemove", "mouseup", "mousedown", 
+                         "mouseover", "mouseout", "keydown", "keyup"];
+    this.specialEvents = {
+      resize: (element, args) => {
+        window.resizeTo(args.width, args.height);
+      },
+
+    }
+  }
+
+  play(evt) {
+    if (evt.eventName === 'mousemove') {
+        Cursor.moveTo(evt.args.x, evt.args.y);
+    }
+    
+    if (evt.eventName in this.specialEvents) {
+      this.specialEvents[evt.eventName](document.documentElement, evt.args);
+    }
+    else if (this.commonEvents.indexOf(evt.eventName) !== -1) {
+      let element = Xpath.getElementByXpath(evt.xpath);
+      if (!element) return;
+      // console.log(evt.eventName, element, evt.args)
+      console.log(evt.eventName)
+      Simulator.simulate(element, evt.eventName, evt.args);
+    } else {
+      console.log(evt.eventName, 'is not supported yet');
+    }    
+  }
+}
+
+class Realtime extends EventPlayer {
+  constructor() {
+    super()
+  }
+
+  start() {
+    Cursor.createCursor();
+    this.initSocket();
+    this.syncScreenSize();
+    this.watch();
+  }
+
+  initSocket() {
+    this.socket = io(window.location.host, {path: UrlHelper.url_for("/socket.io")})
+    // console.log(window.location.host)
+  }
+
+  syncScreenSize() {
+    // fetch screensize from worker
+  }
+
+  watch() {
+    let self = this;
+
+    this.socket.on('requester', function(evt) {
+      if (evt) {
+        self.playEvent(evt);
+        self.eventQueue.push(evt);
+      }
+    });
+
+    this.socket.on('saveEvents', function(msg) {
+      self.saveEvents();
+    })
+  }
+
+  playEvent(evt) {
+    evt = typeof evt === 'string' ? JSON.parse(evt) : evt
+    super.play(evt);
+  }
+
+  saveEvents() {
+    // TODO
+  }
+
+}
+
+
+class Replay extends EventPlayer {
+  constructor() {
+    super();
+  }
+
+  start() {
+    Cursor.createCursor();
+    this.initSocket();
+    // FIXME: async
+    this.loadEvents();
+    this.playEvent();
+  }
+
+  initSocket() {
+    this.socket = io(window.location.host, {path: UrlHelper.url_for("/socket.io")})
+    // console.log(window.location.host)
+  }
+
+  loadEvents() {
+    // TODO: load via socket
+    this.eventQueue = loadCommands();
+  }
+
+  playEvent() {
+    let self = this;
+    let evt;
+    do {
+      if (this.eventQueue.length === 0) return;
+      
+      evt = this.eventQueue.shift();  // get first valid event from the Queue
+    } while (!evt || typeof evt.delay === 'undefined' || !evt.eventName)
+
+    setTimeout(function() {
+      self.play(evt);
+
+      // call the rest eventQueue
+      self.playEvent();
+    }, evt.delay);
+  }
+
 }
 
 function startRealtime() {
-  const socket = io(window.location.host, {path: UrlHelper.url_for("/socket.io")})
-  // console.log(window.location.host)
-  socket.on('requester', function(msg) {
-    console.log(msg)
-  });
+  const realtime = new Realtime();
+  realtime.start();
 }
+
+function startReplay() {
+  const replay = new Replay();
+  replay.start();
+}
+
+
 
 function loadCommands() {
   // TODO: load from json
@@ -58,7 +183,7 @@ function loadCommands() {
     // },
     {
       delay: 200,
-      eventName: 'cursorMove',
+      eventName: 'mousemove',
       args: {x: 65 , y: 58},
     },
     {
@@ -69,7 +194,7 @@ function loadCommands() {
     },
     {
       delay: 200,
-      eventName: 'cursorMove',
+      eventName: 'mousemove',
       args: {x: 206 , y: 42},
     },
     {
@@ -80,7 +205,7 @@ function loadCommands() {
     },
     {
       delay: 2000,
-      eventName: 'cursorMove',
+      eventName: 'mousemove',
       args: {x: 467 , y: 357},
     },
     {
@@ -97,7 +222,7 @@ function loadCommands() {
     },
     {
       delay: 2000,
-      eventName: 'cursorMove',
+      eventName: 'mousemove',
       args: {x: 252 , y: 434},
     },
     {
@@ -122,34 +247,34 @@ function loadCommands() {
   return commands;
 }
 
-function playCommand(commandQueue) {
-  let cmd;
-  while (true) {
-    if (commandQueue.length === 0) return;
+// function playEvent(eventQueue) {
+//   let evt;
+//   while (true) {
+//     if (eventQueue.length === 0) return;
     
-    cmd = commandQueue.shift();  // get first command from the Queue
-    if (cmd && typeof cmd.delay !== 'undefined' && typeof cmd.eventName !== 'undefined')
-      break;
-  }
-  let delay = cmd.delay;
-  let eventName = cmd.eventName;
-  let args = cmd.args;
-  let xpath = cmd.xpath;
+//     evt = eventQueue.shift();  // get first command from the Queue
+//     if (evt && typeof evt.delay !== 'undefined' && typeof evt.eventName !== 'undefined')
+//       break;
+//   }
+//   let delay = evt.delay;
+//   let eventName = evt.eventName;
+//   let args = evt.args;
+//   let xpath = evt.xpath;
 
-  setTimeout(function() {
-    console.log(delay, eventName, args);
-    if (eventName in specialHandlers) {
-      specialHandlers[eventName](document.documentElement, args);
-    }
-    else {
-      // console.log(xpath, getElementByXpath(xpath))
-      Simulator.simulate(Xpath.getElementByXpath(xpath), eventName, args);
-    }
+//   setTimeout(function() {
+//     console.log(delay, eventName, args);
+//     if (eventName in specialHandlers) {
+//       specialHandlers[eventName](document.documentElement, args);
+//     }
+//     else {
+//       // console.log(xpath, getElementByXpath(xpath))
+//       Simulator.simulate(Xpath.getElementByXpath(xpath), eventName, args);
+//     }
 
-    // call the rest commandQueue
-    playCommand(commandQueue);
-  }, delay);
-}
+//     // call the rest eventQueue
+//     playEvent(eventQueue);
+//   }, delay);
+// }
 
 
 

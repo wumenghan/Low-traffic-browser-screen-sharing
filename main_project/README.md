@@ -26,9 +26,3 @@ Simulate mouse events on video player
 * Have to use "mousedown" and "mouseup", not "click" event
 * Must pass the correct clicking XY, not 0,0
 * The target is the canvas (created by videojs-panorama), not the video
-
-## TODO:
-* Simulate mouse cursor
-* Input and Keystroke
-* Drag and drop
-* Check if we can use any simple Front-end unit testing framework

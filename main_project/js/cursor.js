@@ -19,8 +19,9 @@ Cursor.createCursor = function() {
 
 Cursor.moveTo = function(x, y) {
   // Cursor.$$cursorWapper.css({'left': x, 'top': y})
-  console.log(Cursor.$$cursorWapper)
-  Cursor.$$cursorWapper.animate({left: x, top: y}, 500);
+  // console.log(Cursor.$$cursorWapper)
+  // Cursor.$$cursorWapper.animate({left: x, top: y}, 500);
+  Cursor.$$cursorWapper.css({left: x, top: y});
 }
 
 

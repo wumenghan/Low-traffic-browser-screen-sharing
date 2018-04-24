@@ -56,10 +56,10 @@ function recordEvent(eventRecords) {
 		var eventName = evt.type;
 		var args = "";
 
-		// Prevent intensely update for mousemove.
-		if (delay < 30 && eventName == "mousemove") {
-			return;		
-		}
+		// // Prevent intensely update for mousemove.
+		// if (delay < 30 && eventName == "mousemove") {
+		// 	return;		
+		// }
 
 		if (mouseEvents.indexOf(eventName) >= 0) {
 			args = {x: evt.clientX, y:evt.clientY};
