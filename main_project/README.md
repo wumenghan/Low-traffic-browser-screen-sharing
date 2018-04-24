@@ -2,9 +2,9 @@
 
 ## Getting Started
 ```sh
-$ python -m SimpleHTTPServer
-# Then visit the localhost:8000/requester.html
+$ npm start
 ```
+Then visit the host/requester and host/worker. Here, host could be either `localhost:PORT` or other crowd.ecn.purdue.edu server
 
 ## Resources
 * Simulate mouse events <https://github.com/kangax/protolicious/blob/master/event.simulate.js> and <https://stackoverflow.com/questions/6157929/how-to-simulate-a-mouse-click-using-javascript>

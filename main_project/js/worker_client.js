@@ -4,7 +4,8 @@
 */
 var socket;
 $(document).ready(function() {
-	socket = io("https://crowd.ecn.purdue.edu", {path:"/10/socket.io"});
+	// socket = io("https://crowd.ecn.purdue.edu", {path:"/10/socket.io"});
+  socket = io(window.location.host, {path: UrlHelper.url_for("/socket.io")})
 	var myplayer = videojs("myplayer");
 	myplayer.panorama({
 		clickAndDrag: true,

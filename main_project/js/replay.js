@@ -5,8 +5,8 @@
 (function($) {
 
 
-// TODO: determine mode
-var mode = 'replay' || 'realtime';
+var url = location.href;
+var mode = UrlHelper.searchUrlbyKey(url, 'mode') || 'replay';  // 'replay' || 'realtime';
 
 var specialHandlers = {
   resize: function resizeHandler(element, args) {
@@ -20,8 +20,8 @@ var specialHandlers = {
 $(document).ready(function() {
   recordMouseClick();
   if (mode == 'realtime') {
-    // TODO
     console.log("In realtime mode..");
+    startRealtime();
   } else {
     console.log("In replay mode..");
     startReplay();
@@ -32,6 +32,14 @@ function startReplay() {
   var commands = loadCommands();
   Cursor.createCursor();
   playCommand(commands);
+}
+
+function startRealtime() {
+  const socket = io(window.location.host, {path: UrlHelper.url_for("/socket.io")})
+  // console.log(window.location.host)
+  socket.on('requester', function(msg) {
+    console.log(msg)
+  });
 }
 
 function loadCommands() {
