@@ -9,7 +9,7 @@ var url = location.href;
 var mode = UrlHelper.searchUrlbyKey(url, 'mode') || 'replay';  // 'replay' || 'realtime';
 
 $(document).ready(function() {
-  recordMouseClick();
+  // recordMouseClick();
   if (mode == 'realtime') {
     console.log("In realtime mode..");
     startRealtime();
@@ -34,6 +34,11 @@ class EventPlayer {
         window.scrollTo({left: args.left, top: args.top})
       },
     }
+  }
+
+  initSocket() {
+    this.socket = io(window.location.host, {path: UrlHelper.url_for("/socket.io")})
+    // console.log(window.location.host)
   }
 
   play(evt) {
@@ -64,18 +69,18 @@ class Realtime extends EventPlayer {
 
   start() {
     Cursor.createCursor();
+    this.saveInitialStatus();
     this.initSocket();
-    this.syncScreenSize();
     this.watch();
   }
 
-  initSocket() {
-    this.socket = io(window.location.host, {path: UrlHelper.url_for("/socket.io")})
-    // console.log(window.location.host)
-  }
-
-  syncScreenSize() {
-    // fetch screensize from worker
+  saveInitialStatus() {
+    let initStatus = {
+      delay: 0,
+      eventName: 'resize',
+      args: {x: window.innerWidth, y: window.innerHeight}
+    }
+    this.eventQueue.push(JSON.stringify(initStatus))
   }
 
   watch() {
@@ -94,9 +99,10 @@ class Realtime extends EventPlayer {
       }
     });
 
-    this.socket.on('saveEvents', function(msg) {
+    $('#save-events').on('click', function() {
       self.saveEvents();
     })
+
   }
 
   playEvent(evt) {
@@ -105,7 +111,17 @@ class Realtime extends EventPlayer {
   }
 
   saveEvents() {
-    // TODO
+    let self = this;
+    $.ajax({
+      method: 'POST',
+      url: UrlHelper.url_for('saveEvents'),
+      data: {taskid: UrlHelper.taskid, eventQueue: self.eventQueue},
+      dataType: 'json'
+    }).done(function(data) {
+      console.log(data)
+    }).catch(function(err) {
+      console.error(err)
+    })
   }
 
 }
@@ -117,21 +133,25 @@ class Replay extends EventPlayer {
   }
 
   start() {
+    let self = this;
     Cursor.createCursor();
     this.initSocket();
-    // FIXME: async
-    this.loadEvents();
-    this.playEvent();
-  }
 
-  initSocket() {
-    this.socket = io(window.location.host, {path: UrlHelper.url_for("/socket.io")})
-    // console.log(window.location.host)
+    this.loadEvents().done((data) => {
+      self.eventQueue = data.eventQueue;
+      self.playEvent();
+    }).catch((err) => {
+      console.error(err)
+    });
   }
 
   loadEvents() {
-    // TODO: load via socket
-    this.eventQueue = loadCommands();
+    return $.ajax({
+      method: 'POST',
+      url: UrlHelper.url_for('loadEvents'),
+      data: {taskid: UrlHelper.taskid},
+      dataType: 'json'
+    })
   }
 
   playEvent() {
@@ -141,6 +161,7 @@ class Replay extends EventPlayer {
       if (this.eventQueue.length === 0) return;
       
       evt = this.eventQueue.shift();  // get first valid event from the Queue
+      evt = typeof evt === 'string' ? JSON.parse(evt) : evt
     } while (!evt || typeof evt.delay === 'undefined' || !evt.eventName)
 
     setTimeout(function() {
@@ -164,96 +185,10 @@ function startReplay() {
 }
 
 
-
-function loadCommands() {
-  // TODO: load from json
-  // TODO: load from server API
-  var commands = [
-    // {
-    //   delay: 1000,
-    //   eventName: 'resize',
-    //   args: {width: 1000, height: 800}
-    // },
-    // {
-    //   delay: 2000,
-    //   eventName: 'resize',
-    //   args: {width: 800, height: 600}
-    // },
-    {
-      delay: 200,
-      eventName: 'mousemove',
-      args: {x: 65 , y: 58},
-    },
-    {
-      delay: 500,
-      eventName: 'click',
-      args: {x: 65 , y: 58},
-      xpath: 'id("first-btn")'
-    },
-    {
-      delay: 200,
-      eventName: 'mousemove',
-      args: {x: 206 , y: 42},
-    },
-    {
-      delay: 1000,
-      eventName: 'click',
-      args: {x: 206 , y: 42},
-      xpath: 'BODY/P[1]/BUTTON[1]'
-    },
-    {
-      delay: 2000,
-      eventName: 'mousemove',
-      args: {x: 467 , y: 357},
-    },
-    {
-      delay: 3000,
-      eventName: 'mousedown',
-      args: {x: 467 , y: 357},
-      xpath: 'id("myplayer")/CANVAS[1]'
-    },
-    {
-      delay: 100,
-      eventName: 'mouseup',
-      args: {x: 467 , y: 357},
-      xpath: 'id("myplayer")/CANVAS[1]'
-    },
-    {
-      delay: 2000,
-      eventName: 'mousemove',
-      args: {x: 252 , y: 434},
-    },
-    {
-      delay: 100,
-      eventName: 'mousedown',
-      args: {x: 252 , y: 434},
-      xpath: 'id("myplayer")/CANVAS[1]'
-    },
-    {
-      delay: 100,
-      eventName: 'mouseup',
-      args: {x: 252 , y: 434},
-      xpath: 'id("myplayer")/CANVAS[1]'
-    },
-    // {
-    //   delay: 2000,
-    //   eventName: 'click',
-    //   args: {x: 492 , y: 253},
-    //   xpath: 'id("second-p")/BUTTON[2]'
-    // },
-  ];
-  return commands;
-}
-
-
+// for debug
 function recordMouseClick() {
   $("body").on('click', function(evt) {
     console.log('clicked at', evt.clientX, evt.clientY, 'xpath:', Xpath.getPathTo(evt.target));
-
-    // alert('clicked at'+ evt.clientX+ evt.clientY);
-  })
-  $("#first-btn").on('click', function() {
-    // alert('clicked at me')
   })
 }
 

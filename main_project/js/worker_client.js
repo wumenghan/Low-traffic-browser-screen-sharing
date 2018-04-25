@@ -20,6 +20,8 @@ $(document).ready(function() {
 
 	recordEvent(eventRecords);
 	//requestHelp(socket);
+
+	handleSaveEvents(socket);
 });
 
 // Worker makes a request to requeter for help.
@@ -110,5 +112,13 @@ function getInitStatus() {
 
 function getHelpFromRequester() {
 	//socket.on("")
+}
+
+function handleSaveEvents(socket) {
+	$('#save-events').on('click', function() {
+		// notify requester
+		// socket.emit('worker_notify_save', {taskid: UrlHelper.taskid});
+		// TODO: stop record events
+	}).off();
 }
 

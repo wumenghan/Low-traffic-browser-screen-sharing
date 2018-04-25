@@ -65,7 +65,6 @@ UrlHelper.searchUrlbyKey = function(url, key) {
 
 UrlHelper.url_prefix = get_url_prefix();
 UrlHelper.taskid = UrlHelper.searchUrlbyKey(location.href, 'taskid');
-console.log(UrlHelper.taskid)
 
 
 })(jQuery);
