@@ -75,10 +75,12 @@ class Realtime extends EventPlayer {
   }
 
   saveInitialStatus() {
+    const offset = 80;
     let initStatus = {
       delay: 0,
       eventName: 'resize',
-      args: {x: window.innerWidth, y: window.innerHeight}
+      // add offset because the browser tab is taller than individually opened window 
+      args: {x: window.innerWidth, y: window.innerHeight + offset}
     }
     this.eventQueue.push(JSON.stringify(initStatus))
   }
@@ -86,15 +88,16 @@ class Realtime extends EventPlayer {
   watch() {
     let self = this;
 
-    this.socket.on('requester', function(evt) {
-      if (evt) {
-        self.playEvent(evt);
-        self.eventQueue.push(evt);
+    this.socket.on('requester', function(msg) {
+      msg = typeof msg === 'string' ? JSON.parse(msg) : msg
+      if (UrlHelper.areEqualIds(msg.ids)) {
+        self.playEvent(msg.evt);
+        self.eventQueue.push(JSON.stringify(msg.evt));
       }
     });
 
     this.socket.on('worker_init_status', function(msg) {
-      if (msg.taskid === UrlHelper.taskid) {
+      if (UrlHelper.areEqualIds(msg.ids)) {
         location.reload();
       }
     });
@@ -115,7 +118,7 @@ class Realtime extends EventPlayer {
     $.ajax({
       method: 'POST',
       url: UrlHelper.url_for('saveEvents'),
-      data: {taskid: UrlHelper.taskid, eventQueue: self.eventQueue},
+      data: {taskid: UrlHelper.taskid, workerid: UrlHelper.workerid, eventQueue: self.eventQueue},
       dataType: 'json'
     }).done(function(data) {
       console.log(data)
@@ -135,7 +138,7 @@ class Replay extends EventPlayer {
   start() {
     let self = this;
     Cursor.createCursor();
-    this.initSocket();
+    // this.initSocket();
 
     this.loadEvents().done((data) => {
       self.eventQueue = data.eventQueue;
@@ -149,11 +152,12 @@ class Replay extends EventPlayer {
     return $.ajax({
       method: 'POST',
       url: UrlHelper.url_for('loadEvents'),
-      data: {taskid: UrlHelper.taskid},
+      data: {taskid: UrlHelper.taskid, workerid: UrlHelper.workerid},
       dataType: 'json'
     })
   }
 
+  // play event recursively, one by one in the queue
   playEvent() {
     let self = this;
     let evt;

@@ -65,6 +65,11 @@ UrlHelper.searchUrlbyKey = function(url, key) {
 
 UrlHelper.url_prefix = get_url_prefix();
 UrlHelper.taskid = UrlHelper.searchUrlbyKey(location.href, 'taskid');
+UrlHelper.workerid = UrlHelper.searchUrlbyKey(location.href, 'workerid');
+UrlHelper.ids = {taskid: UrlHelper.taskid, workerid: UrlHelper.workerid}
 
+UrlHelper.areEqualIds = function(ids) {
+  return ids && ids.taskid === UrlHelper.taskid && ids.workerid === UrlHelper.workerid
+}
 
 })(jQuery);

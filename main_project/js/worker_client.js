@@ -88,7 +88,7 @@ function recordEvent(eventRecords) {
 			args = "Unknown event";	
 		}
 		var action = {delay:delay, eventName:eventName, args:args, xpath: Xpath.getPathTo(evt.target)}
-		var data = JSON.stringify(action);
+		var data = JSON.stringify({evt:action, ids:UrlHelper.ids});
 		socket.emit("worker_action", data);
 		startTime = eventTime;
 		//console.log(eventRecords.length);
@@ -103,7 +103,7 @@ function getInitStatus() {
 	init_status["width"] = target.width();
 	init_status["height"] = target.height();
 	init_status["mouse_pos"] = {x:0, y:0};
-	init_status['taskid'] = UrlHelper.taskid;
+	init_status['ids'] = UrlHelper.ids;
 	//	target.on("mouseover", function(evt) {
 	//		init_status["mouse_pos"] = [evt.clientX, evt.clientY];		
 	//	});

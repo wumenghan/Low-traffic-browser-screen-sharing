@@ -19,8 +19,8 @@ var PORT = 8010;
 // app.set('view engine', 'pug')
 
 // use body-parser to grab info from POST
-app.use(bodyParser.urlencoded({extended: true}))
-app.use(bodyParser.json())
+app.use(bodyParser.urlencoded({limit: '2mb', extended: true}))
+app.use(bodyParser.json({limit: '2mb'}))
 
 app.use(express.static(path.join(__dirname)));
 
@@ -45,19 +45,40 @@ app.get("/replay", function(req, res) {
 	res.sendFile(path.join(__dirname, "html/replay"+taskid+".html"));
 });
 
+app.get("/completedTasks", function(req, res) {
+	fs.readdir('./json', function(err, filenames) {
+		if (err) {
+			console.log(err)
+			return;
+		}
+		let data = filenames.map(getIdsByEventLog)
+		res.json(data)
+	})
+});
+
 app.post('/loadEvents', function(req, res) {
 	let taskid = req.body.taskid;
-	res.json(require('./json/event_log'+taskid))
+	let workerid = req.body.workerid;
+	res.json(require(getEventLogName(taskid, workerid)))
 })
 
 app.post('/saveEvents', function(req, res) {
 	let taskid = req.body.taskid;
+	let workerid = req.body.workerid;
 	let eventQueue = req.body.eventQueue;
-	fs.writeFile('./json/event_log'+taskid+'.json', JSON.stringify({eventQueue: eventQueue}), 'utf8', function() {
+	fs.writeFile(getEventLogName(taskid, workerid), JSON.stringify({eventQueue: eventQueue}), 'utf8', function() {
 		res.json('ok')
 	});
 })
 
+function getEventLogName(taskid, workerid) {
+	return './json/event_log_task'+taskid+'_worker'+workerid+'.json';
+}
+
+function getIdsByEventLog(filename) {
+	let match = filename.match(/event_log_task(\d+)_worker(\d+).json/)
+	return {taskid: match[1], workerid: match[2]}
+}
 
 io.on("connection", function(socket) {
 	socket.broadcast.emit("user connected");
