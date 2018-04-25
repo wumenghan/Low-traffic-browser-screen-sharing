@@ -26,3 +26,8 @@ Simulate mouse events on video player
 * Have to use "mousedown" and "mouseup", not "click" event
 * Must pass the correct clicking XY, not 0,0
 * The target is the canvas (created by videojs-panorama), not the video
+
+
+## Possible tasks:
+* [A Subjective Study on QoE of 360 video for VR communication](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=8122249)
+
