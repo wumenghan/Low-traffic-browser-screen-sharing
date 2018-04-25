@@ -1,3 +1,6 @@
+// xpath
+// Author: Gaoping Huang
+
 (function() {
 
 var Xpath = window.Xpath = window.Xpath || {};

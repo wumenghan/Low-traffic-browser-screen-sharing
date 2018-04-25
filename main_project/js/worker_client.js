@@ -71,11 +71,11 @@ function recordEvent(eventRecords) {
 			if (eventName == "scroll") {
 				var scrollTop = $(window).scrollTop();
 				var scrollLeft = $(window).scrollLeft();
-				args = {x:scrollLeft, y:scrollTop};
+				args = {left:scrollLeft, top:scrollTop};
 			}
 			else if (eventName == "resize") {
-				var width = $(window).width;
-				var height = $(window).height;
+				var width = window.outerWidth;
+				var height = window.outerHeight;
 				args = {x:width, y:height};
 			}
 			else {
@@ -101,6 +101,7 @@ function getInitStatus() {
 	init_status["width"] = target.width();
 	init_status["height"] = target.height();
 	init_status["mouse_pos"] = {x:0, y:0};
+	init_status['taskid'] = UrlHelper.taskid;
 	//	target.on("mouseover", function(evt) {
 	//		init_status["mouse_pos"] = [evt.clientX, evt.clientY];		
 	//	});

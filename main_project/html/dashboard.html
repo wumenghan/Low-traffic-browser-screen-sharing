@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Requester Dashboard</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+</head>
+
+<body>
+  <div class="container">
+
+    <div class="row">
+      <div class="col-12">
+
+        <h3>Requester Dashboard</h3>
+
+        <h4 class="mt-4">New tasks</h4>
+        <ul class="new-task-list list-group">
+          <li class="new-task-item list-group-item d-flex justify-content-between align-items-center">
+            New task 1
+            <span class="badge badge-pill">
+              <button class="btn btn-success" type="button" data-mode="realtime" data-taskid="1">
+                Start realtime
+              </button>
+            </span>
+          </li>
+          <li class="new-task-item list-group-item d-flex justify-content-between align-items-center">
+            New task 2
+            <span class="badge badge-pill">
+              <button class="btn btn-success" type="button" data-mode="realtime" data-taskid="2">
+                Start realtime
+              </button>
+            </span>
+          </li>
+        </ul>
+
+        <h4 class="mt-4">Completed tasks</h4>
+        <ul class="old-task-list list-group">
+          <li class="old-task-item list-group-item d-flex justify-content-between align-items-center">
+            Completed task 3
+            <span class="badge badge-pill">
+              <button class="btn btn-info" type="button" data-mode="replay" data-taskid="1">
+                Start replay
+              </button>
+            </span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+
+  <script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-3.3.1.min.js"></script>
+  <script src="./socket.io/socket.io.js"></script>
+  <script src="./js/url-helper.js"></script>
+  <script src="./js/dashboard.js"></script>
+
+</body>
+
+</html>

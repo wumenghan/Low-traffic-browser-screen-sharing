@@ -1,4 +1,6 @@
 // cursor.js:  draw a fake cursor and move with given coordinates
+// 
+// Author: Gaoping Huang
 
 (function() {
 

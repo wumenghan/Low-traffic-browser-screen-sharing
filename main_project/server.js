@@ -1,6 +1,6 @@
 /*
  * Author: Meng-Han Wu
- * Server code to for connecting worker and rqester
+ * Server code to for connecting worker and requester
  *
  */
 
@@ -12,14 +12,32 @@ var path = require("path");
 
 var PORT = 8010;
 
+
+// app.set('views', 'html')
+// app.set('view engine', 'pug')
+
+
 app.use(express.static(path.join(__dirname)));
 
+
 app.get("/worker", function(req, res) {
-	res.sendFile(__dirname + "/worker.html");
+	let taskid = req.query.taskid;
+	res.sendFile(path.join(__dirname, "html/worker"+taskid+".html"));
 });
 
 app.get("/requester", function(req, res) {
-	res.sendFile(__dirname + "/requester.html");
+	let taskid = req.query.taskid;
+	res.sendFile(path.join(__dirname, "html/requester"+taskid+".html"));
+	// res.render('requester'+taskid, {title: 'Requester Page'})
+});
+
+app.get("/dashboard", function(req, res) {
+	res.sendFile(path.join(__dirname, "html/dashboard.html"));
+});
+
+app.get("/replay", function(req, res) {
+	let taskid = req.query.taskid;
+	res.sendFile(path.join(__dirname, "html/replay"+taskid+".html"));
 });
 
 
@@ -37,7 +55,7 @@ io.on("connection", function(socket) {
 
 	socket.on("worker_action", function(msg) {
 		io.emit("requester", msg);
-		console.log(msg);
+		// console.log(msg);
 	});
 	
 	socket.on("worker_request_help", function(msg) {

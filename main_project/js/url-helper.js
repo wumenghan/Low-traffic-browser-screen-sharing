@@ -1,11 +1,11 @@
-
+// Helper functions for url 
+// 
+// Author: Gaoping Huang
 
 (function($) {
 
 // which will be exported to other js files
 var UrlHelper = window.UrlHelper = window.UrlHelper || {};
-
-UrlHelper.url_prefix = get_url_prefix();
 
 function get_url_prefix() {
   console.log(window.location.pathname);
@@ -61,5 +61,11 @@ UrlHelper.searchUrlbyKey = function(url, key) {
     };
   }
 }
+
+
+UrlHelper.url_prefix = get_url_prefix();
+UrlHelper.taskid = UrlHelper.searchUrlbyKey(location.href, 'taskid');
+console.log(UrlHelper.taskid)
+
 
 })(jQuery);

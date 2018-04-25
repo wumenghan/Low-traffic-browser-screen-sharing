@@ -1,4 +1,4 @@
-// replay commands
+// replay events
 // Author: Gaoping Huang
 // Since: March 2018
 
@@ -7,17 +7,6 @@
 
 var url = location.href;
 var mode = UrlHelper.searchUrlbyKey(url, 'mode') || 'replay';  // 'replay' || 'realtime';
-
-// var geventQueue = [];  // global command queue
-
-// var specialHandlers = {
-//   resize: function resizeHandler(element, args) {
-//     window.resizeTo(args.width, args.height);
-//   },
-//   mousemove: function moveCursor(element, args) {
-//     Cursor.moveTo(args.x, args.y);
-//   },
-// }
 
 $(document).ready(function() {
   recordMouseClick();
@@ -39,9 +28,11 @@ class EventPlayer {
                          "mouseover", "mouseout", "keydown", "keyup"];
     this.specialEvents = {
       resize: (element, args) => {
-        window.resizeTo(args.width, args.height);
+        window.resizeTo(args.x, args.y);
       },
-
+      scroll: (element, args) => {
+        window.scrollTo({left: args.left, top: args.top})
+      },
     }
   }
 
@@ -51,13 +42,14 @@ class EventPlayer {
     }
     
     if (evt.eventName in this.specialEvents) {
+      console.log(evt.eventName)
       this.specialEvents[evt.eventName](document.documentElement, evt.args);
     }
     else if (this.commonEvents.indexOf(evt.eventName) !== -1) {
       let element = Xpath.getElementByXpath(evt.xpath);
       if (!element) return;
       // console.log(evt.eventName, element, evt.args)
-      console.log(evt.eventName)
+      // console.log(evt.eventName)
       Simulator.simulate(element, evt.eventName, evt.args);
     } else {
       console.log(evt.eventName, 'is not supported yet');
@@ -93,6 +85,12 @@ class Realtime extends EventPlayer {
       if (evt) {
         self.playEvent(evt);
         self.eventQueue.push(evt);
+      }
+    });
+
+    this.socket.on('worker_init_status', function(msg) {
+      if (msg.taskid === UrlHelper.taskid) {
+        location.reload();
       }
     });
 
@@ -246,36 +244,6 @@ function loadCommands() {
   ];
   return commands;
 }
-
-// function playEvent(eventQueue) {
-//   let evt;
-//   while (true) {
-//     if (eventQueue.length === 0) return;
-    
-//     evt = eventQueue.shift();  // get first command from the Queue
-//     if (evt && typeof evt.delay !== 'undefined' && typeof evt.eventName !== 'undefined')
-//       break;
-//   }
-//   let delay = evt.delay;
-//   let eventName = evt.eventName;
-//   let args = evt.args;
-//   let xpath = evt.xpath;
-
-//   setTimeout(function() {
-//     console.log(delay, eventName, args);
-//     if (eventName in specialHandlers) {
-//       specialHandlers[eventName](document.documentElement, args);
-//     }
-//     else {
-//       // console.log(xpath, getElementByXpath(xpath))
-//       Simulator.simulate(Xpath.getElementByXpath(xpath), eventName, args);
-//     }
-
-//     // call the rest eventQueue
-//     playEvent(eventQueue);
-//   }, delay);
-// }
-
 
 
 function recordMouseClick() {

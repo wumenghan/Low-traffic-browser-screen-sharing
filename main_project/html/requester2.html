@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Requester Page 1</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+  <link href="https://vjs.zencdn.net/5.8/video-js.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+	<h3>Worker page 2</h3>
+	<video id="myplayer" class="video-js" controls preload="auto" width="640" height="264">
+	<source src="./videos/360.mp4" type='video/mp4'>
+		<p class="vjs-no-js">
+			To view this video please enable JavaScript, and consider upgrading to a web browser that
+			<a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
+		</p>
+	</video>
+
+
+  <!-- for Boostrap and jQuery -->
+  <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+  <!-- socket.io -->
+  <script src="./socket.io/socket.io.js"></script>
+
+  <!-- video.js -->
+  <script src="https://vjs.zencdn.net/5.8/video.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r76/three.js"></script>
+  <script src="./libs/videojs-panorama-v1.0.0-beta/videojs-panorama.js"></script>
+  
+  <script>
+    $(document).ready(function() {
+      var player = videojs('myplayer');
+      
+
+      player.panorama({
+        clickAndDrag: true,
+          ready: function (){
+            // player.play();
+        }
+      });
+    })
+  </script>
+
+  <!-- my script -->
+  <script src="./js/url-helper.js"></script>
+  <script src="./js/event.simulate.js"></script>
+  <script src="./js/xpath.js"></script>
+  <script src="./js/cursor.js"></script>
+  <script src="./js/replay.js"></script>
+</body>
+
+</html>
