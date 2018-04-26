@@ -9,7 +9,7 @@ var url = location.href;
 var mode = UrlHelper.searchUrlbyKey(url, 'mode') || 'replay';  // 'replay' || 'realtime';
 
 $(document).ready(function() {
-  // recordMouseClick();
+  recordMouseClick();
   if (mode == 'realtime') {
     console.log("In realtime mode..");
     startRealtime();
@@ -23,6 +23,7 @@ class EventPlayer {
   constructor() {
     this.eventQueue = [];
     this.socket = null;
+	this.scrollOffset = {left:0, height:0};
     // notice: mousemove is in specialEvents
     this.commonEvents = ["click", "dbclick", "mousemove", "mouseup", "mousedown", 
                          "mouseover", "mouseout", "keydown", "keyup"];
@@ -32,6 +33,7 @@ class EventPlayer {
       },
       scroll: (element, args) => {
         window.scrollTo({left: args.left, top: args.top})
+		this.scrollOffset = args;
       },
     }
   }
@@ -43,7 +45,7 @@ class EventPlayer {
 
   play(evt) {
     if (evt.eventName === 'mousemove') {
-        Cursor.moveTo(evt.args.x, evt.args.y);
+        Cursor.moveTo(evt.args.x + this.scrollOffset.left, evt.args.y + this.scrollOffset.top);
     }
     
     if (evt.eventName in this.specialEvents) {
@@ -52,6 +54,10 @@ class EventPlayer {
     }
     else if (this.commonEvents.indexOf(evt.eventName) !== -1) {
       let element = Xpath.getElementByXpath(evt.xpath);
+	  if (evt.eventName === "click") {
+	    console.log(evt.xpath);	
+	  	console.log(element);
+	}
       if (!element) return;
       // console.log(evt.eventName, element, evt.args)
       // console.log(evt.eventName)
