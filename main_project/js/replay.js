@@ -100,8 +100,9 @@ class Realtime extends EventPlayer {
     this.socket.on('requester', function(msg) {
       msg = typeof msg === 'string' ? JSON.parse(msg) : msg
       if (UrlHelper.areEqualIds(msg.ids)) {
-        self.playEvent(msg.evt);
+        // must push into queue before play so that the last click can be saved
         self.eventQueue.push(JSON.stringify(msg.evt));
+        self.playEvent(msg.evt);
       }
     });
 
