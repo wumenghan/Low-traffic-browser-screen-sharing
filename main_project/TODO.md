@@ -5,6 +5,7 @@
 * (maybe) Can set min Gap between two events
 * Open Replay window with correct size
 
+* Use Xpath may fail due to the elements with the id
 
 
 

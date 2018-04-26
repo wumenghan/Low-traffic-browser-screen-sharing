@@ -19,8 +19,8 @@ var PORT = 8010;
 // app.set('view engine', 'pug')
 
 // use body-parser to grab info from POST
-app.use(bodyParser.urlencoded({limit: '2mb', extended: true}))
-app.use(bodyParser.json({limit: '2mb'}))
+app.use(bodyParser.urlencoded({limit: '10mb', extended: true, parameterLimit: 1000000}))
+app.use(bodyParser.json({limit: '10mb'}))
 
 app.use(express.static(path.join(__dirname)));
 
