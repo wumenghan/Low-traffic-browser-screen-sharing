@@ -118,7 +118,8 @@ function handleSaveEvents(socket) {
 	$('#save-events').on('click', function() {
 		// notify requester
 		// socket.emit('worker_notify_save', {taskid: UrlHelper.taskid});
-		// TODO: stop record events
+		// show completion code
+		$('#completion-code').text()
 	}).off();
 }
 

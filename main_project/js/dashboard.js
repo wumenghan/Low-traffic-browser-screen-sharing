@@ -12,10 +12,10 @@ socket.on("worker_init_status", function(msg) {
   // must open a new window for given msg
   let taskid = msg.ids.taskid;
   let workerid = msg.ids.workerid;
-  let query = '?mode=realtime&taskid='+taskid+'&'+'workerid='+workerid
+  let query = `?mode=realtime&taskid=${taskid}&workerid=${workerid}`
   if (!openedWindows[query]) {
     openedWindows[query] = true;
-    window.open(UrlHelper.url_for('/requester'+query), "", "width="+msg.width+", height="+msg.height)
+    window.open(UrlHelper.url_for('/requester'+query), "", `width=${msg.width}, height=${msg.height}`)
   }
 });
 
@@ -36,7 +36,7 @@ function loadCompletedTasks() {
     const $container = $('.old-task-list');
     data.forEach((obj) => {
       let $li = $('<li class="old-task-item list-group-item d-flex justify-content-between align-items-center">')
-      $li.text('Completed task '+obj.taskid +' by worker '+obj.workerid)
+      $li.text(`Completed task ${obj.taskid} by worker ${obj.workerid}`)
       $li.append(`<span class="badge badge-pill">
               <button class="btn btn-info" type="button" data-mode="replay" data-taskid="${obj.taskid}" data-workerid="${obj.workerid}">
                 Start replay
@@ -65,7 +65,7 @@ function handleTaskBtns() {
       // in practice, we should wait for workers to open the page
       window.open(UrlHelper.url_for('/worker'+query));
     } else {
-      // must opens a new window
+      // must open a new window to allow resize by js
       window.open(UrlHelper.url_for("/replay"+query), "", "width=600, height=600");
     }
   })

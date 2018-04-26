@@ -3,9 +3,9 @@
 // Since: March 2018
 
 (function($) {
-'use strict';
+  'use strict';
 
-var url = location.href;
+  var url = location.href;
 var mode = UrlHelper.searchUrlbyKey(url, 'mode') || 'replay';  // 'replay' || 'realtime';
 
 $(document).ready(function() {
@@ -23,17 +23,17 @@ class EventPlayer {
   constructor() {
     this.eventQueue = [];
     this.socket = null;
-	this.scrollOffset = {left:0, height:0};
+    this.scrollOffset = {left:0, top:0};
     // notice: mousemove is in specialEvents
     this.commonEvents = ["click", "dbclick", "mousemove", "mouseup", "mousedown", 
-                         "mouseover", "mouseout", "keydown", "keyup"];
+    "mouseover", "mouseout", "keydown", "keyup"];
     this.specialEvents = {
       resize: (element, args) => {
         window.resizeTo(args.x, args.y);
       },
       scroll: (element, args) => {
         window.scrollTo({left: args.left, top: args.top})
-		this.scrollOffset = args;
+        this.scrollOffset = args;
       },
     }
   }
@@ -45,7 +45,7 @@ class EventPlayer {
 
   play(evt) {
     if (evt.eventName === 'mousemove') {
-        Cursor.moveTo(evt.args.x + this.scrollOffset.left, evt.args.y + this.scrollOffset.top);
+      Cursor.moveTo(evt.args.x + this.scrollOffset.left, evt.args.y + this.scrollOffset.top);
     }
     
     if (evt.eventName in this.specialEvents) {
@@ -54,12 +54,11 @@ class EventPlayer {
     }
     else if (this.commonEvents.indexOf(evt.eventName) !== -1) {
       let element = Xpath.getElementByXpath(evt.xpath);
-	  if (evt.eventName === "click") {
-	    console.log(evt.xpath);	
-	  	console.log(element);
-	}
+      // let element = document.elementFromPoint(evt.args.x, evt.args.y)
+      if (evt.eventName === 'click') {
+        console.log(evt.eventName, element, evt.args)
+      }
       if (!element) return;
-      // console.log(evt.eventName, element, evt.args)
       // console.log(evt.eventName)
       Simulator.simulate(element, evt.eventName, evt.args);
     } else {
