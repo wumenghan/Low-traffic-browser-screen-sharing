@@ -119,7 +119,7 @@ function handleSaveEvents(socket) {
 		// notify requester
 		// socket.emit('worker_notify_save', {taskid: UrlHelper.taskid});
 		// show completion code
-		$('#completion-code').text()
-	}).off();
+		$('#completion-code').html(`Completion Code: <strong>t${UrlHelper.taskid}w${UrlHelper.workerid}s100 </strong>`)
+	});
 }
 

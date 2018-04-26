@@ -9,7 +9,7 @@
 var mode = UrlHelper.searchUrlbyKey(url, 'mode') || 'replay';  // 'replay' || 'realtime';
 
 $(document).ready(function() {
-  recordMouseClick();
+  // recordMouseClick();  // for debug
   if (mode == 'realtime') {
     console.log("In realtime mode..");
     startRealtime();
@@ -55,15 +55,19 @@ class EventPlayer {
     else if (this.commonEvents.indexOf(evt.eventName) !== -1) {
       let element = Xpath.getElementByXpath(evt.xpath);
       // let element = document.elementFromPoint(evt.args.x, evt.args.y)
-      if (evt.eventName === 'click') {
-        console.log(evt.eventName, element, evt.args)
-      }
+      // if (evt.eventName === 'click') {
+      //   console.log(evt.eventName, element, evt.args)
+      // }
       if (!element) return;
       // console.log(evt.eventName)
       Simulator.simulate(element, evt.eventName, evt.args);
     } else {
       console.log(evt.eventName, 'is not supported yet');
     }    
+  }
+
+  showCompletionCode() {
+    $('#completion-code').html(`Completion Code: <strong>t${UrlHelper.taskid}w${UrlHelper.workerid}s100 </strong>`)
   }
 }
 
@@ -108,6 +112,8 @@ class Realtime extends EventPlayer {
     });
 
     $('#save-events').on('click', function() {
+      // show completion code
+      self.showCompletionCode();
       self.saveEvents();
     })
 
@@ -143,6 +149,7 @@ class Replay extends EventPlayer {
   start() {
     let self = this;
     Cursor.createCursor();
+    this.handleSaveEvents();
     // this.initSocket();
 
     this.loadEvents().done((data) => {
@@ -179,6 +186,12 @@ class Replay extends EventPlayer {
       // call the rest eventQueue
       self.playEvent();
     }, evt.delay);
+  }
+
+  handleSaveEvents() {
+    $('#save-events').on('click', function() {
+      self.showCompletionCode();
+    })
   }
 
 }
