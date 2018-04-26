@@ -36,4 +36,5 @@ Simulate mouse events on video player
 
 ## Possible tasks:
 * [A Subjective Study on QoE of 360 video for VR communication](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=8122249)
-
+* [A survey of network virtualization](https://www.sciencedirect.com/science/article/pii/S1389128609003387)
+* [A blueprint for introducing disruptive technology into the Internet](https://dl.acm.org/citation.cfm?id=774772)
