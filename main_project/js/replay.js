@@ -189,6 +189,7 @@ class Replay extends EventPlayer {
   }
 
   handleSaveEvents() {
+    let self = this;
     $('#save-events').on('click', function() {
       self.showCompletionCode();
     })
