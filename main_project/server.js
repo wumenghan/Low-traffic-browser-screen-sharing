@@ -59,7 +59,7 @@ app.get("/completedTasks", function(req, res) {
 app.post('/loadEvents', function(req, res) {
 	let taskid = req.body.taskid;
 	let workerid = req.body.workerid;
-	res.json(require(getEventLogName(taskid, workerid)))
+	res.json(JSON.parse(fs.readFileSync(getEventLogName(taskid, workerid), 'utf8')))
 })
 
 app.post('/saveEvents', function(req, res) {
