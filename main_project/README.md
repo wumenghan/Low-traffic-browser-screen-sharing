@@ -10,7 +10,7 @@ Start server
 ```sh
 $ npm start
 ```
-Then visit `host/dashboard`. Here, host could be either `localhost:PORT` or other crowd.ecn.purdue.edu server
+Then visit `localhost:8010/dashboard`.
 
 
 ## Resources
