@@ -22,15 +22,15 @@ Then visit `localhost:8010/dashboard`.
 * [Custom Mouse Pointer in JS](https://www.youtube.com/watch?v=QyeBCBYXjfw)
 
 
-## Fatal Issues with Iframe:
+## Fatal issues with Iframe:
 [Hard to Detect Click into Iframe using JavaScript](https://stackoverflow.com/questions/2381336/detect-click-into-iframe-using-javascript)
 * We can at most know that we click on Iframe element, but cannot know the clicked elements, let alone simulate mouse events into Iframe
 * Therefore, it's impossible to embed Youtube.
 * Solution: use [video.js](https://videojs.com/) to load video in the same page.
 
-## Keynotes:
+## Key notes:
 Simulate mouse events on video player
-* Have to use "mousedown" and "mouseup", not "click" event
+* Must use "mousedown" and "mouseup", not "click" event
 * Must pass the correct clicking XY, not 0,0
 * The target is the canvas (created by videojs-panorama), not the video
 
