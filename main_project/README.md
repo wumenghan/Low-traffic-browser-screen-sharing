@@ -1,4 +1,5 @@
 # Main project
+A **low-traffic** visual monitoring system (with **realtime and replay** modes) that aims to facilitate online user experiments.
 
 ## Getting Started
 Install dependencies
